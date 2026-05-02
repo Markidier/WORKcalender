@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WORKcalender - 미니멀 일정 관리</title>
+    <!-- Pretendard 폰트 불러오기 -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <main class="app-container">
+        <header class="app-header">
+            <h1>WORKcalender</h1>
+            <p class="subtitle">이번 달의 주요 일정을 확인하세요.</p>
+        </header>
+
+        <section class="section key-events-section">
+            <div class="section-header">
+                <h2>Key Events</h2>
+                <span class="badge">This Month</span>
+            </div>
+            <div id="key-events-container" class="key-events-grid">
+                <!-- 주요 일정 카드가 JavaScript를 통해 렌더링됩니다 -->
+            </div>
+        </section>
+
+        <section class="section all-events-section">
+            <div class="section-header">
+                <h2>All Schedule</h2>
+            </div>
+            <div class="list-header">
+                <span class="col-date">Date</span>
+                <span class="col-title">Event</span>
+            </div>
+            <ul id="all-events-list" class="all-events-list">
+                <!-- 전체 일정 리스트가 JavaScript를 통해 렌더링됩니다 -->
+            </ul>
+        </section>
+    </main>
+
+    <!-- 템플릿: 주요 일정 카드 -->
+    <template id="key-event-template">
+        <article class="key-event-card">
+            <div class="card-date"></div>
+            <h3 class="card-title"></h3>
+            <p class="card-desc"></p>
+        </article>
+    </template>
+
+    <!-- 템플릿: 리스트 아이템 -->
+    <template id="list-item-template">
+        <li class="list-item">
+            <div class="item-date"></div>
+            <div class="item-content">
+                <h3 class="item-title"></h3>
+                <p class="item-desc"></p>
+            </div>
+        </li>
+    </template>
+
+    <script src="./script.js"></script>
+</body>
+</html>
