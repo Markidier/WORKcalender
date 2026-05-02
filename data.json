@@ -61,5 +61,12 @@
     "description": "함은정 BDC 구성안 브랜드 전달",
     "isKey": true,
     "id": 9
+  },
+  {
+    "title": "브랜드필름 1차 구성 제안",
+    "date": "2026-04-24T09:00:00",
+    "description": "라이필 브랜드필름 1차 구성 제안",
+    "isKey": false,
+    "id": 10
   }
 ]
