@@ -47,5 +47,12 @@
     "description": "Deliver treats to SKT T-DASHOP production team in the morning and report to client.",
     "isKey": false,
     "id": 7
+  },
+  {
+    "title": "함은정_BDC 구성안 피드백 전달",
+    "date": "2026-04-24T09:00:00",
+    "description": "라이필 함은정_BDC 구성안 피드백 전달",
+    "isKey": false,
+    "id": 8
   }
 ]
