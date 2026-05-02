@@ -1,0 +1,230 @@
+/* 기본 설정 및 CSS 변수 */
+:root {
+    --color-bg: #FFFFFF;
+    --color-text: #1A1A1A;
+    --color-text-muted: #757575;
+    --color-border: #EEEEEE;
+    --color-accent: #000000;
+    --font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+    
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 4rem;
+    
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 24px;
+    
+    --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-family);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 레이아웃 컨테이너 */
+.app-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--spacing-xl) var(--spacing-md);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+/* 헤더 영역 */
+.app-header {
+    text-align: left;
+    margin-bottom: var(--spacing-md);
+}
+
+.app-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: var(--spacing-sm);
+}
+
+.subtitle {
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+    font-weight: 400;
+}
+
+/* 섹션 공통 스타일 */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--color-text);
+}
+
+.section-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge {
+    background-color: var(--color-text);
+    color: var(--color-bg);
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* 주요 일정 (카드 그리드) */
+.key-events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.key-event-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    transition: var(--transition);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.key-event-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+    border-color: var(--color-text);
+}
+
+.card-date {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-sm);
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.card-desc {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    margin-top: auto;
+}
+
+/* 전체 일정 (리스트) */
+.list-header {
+    display: flex;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: var(--spacing-sm);
+}
+
+.col-date {
+    flex: 0 0 120px;
+}
+
+.col-title {
+    flex: 1;
+}
+
+.all-events-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+}
+
+.list-item {
+    display: flex;
+    padding: var(--spacing-lg) 0;
+    border-bottom: 1px solid var(--color-border);
+    transition: var(--transition);
+    align-items: flex-start;
+}
+
+.list-item:hover {
+    background-color: #FAFAFA;
+    padding-left: var(--spacing-sm);
+    padding-right: var(--spacing-sm);
+    margin-left: calc(var(--spacing-sm) * -1);
+    margin-right: calc(var(--spacing-sm) * -1);
+    border-radius: var(--radius-sm);
+    border-bottom-color: transparent;
+}
+
+.item-date {
+    flex: 0 0 120px;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--color-text);
+    padding-top: 2px;
+}
+
+.item-content {
+    flex: 1;
+}
+
+.item-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.item-desc {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+}
+
+/* 반응형 (모바일) */
+@media (max-width: 600px) {
+    .app-container {
+        padding: var(--spacing-lg) var(--spacing-md);
+        gap: var(--spacing-lg);
+    }
+    
+    .app-header h1 {
+        font-size: 2rem;
+    }
+    
+    .list-item {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .item-date {
+        flex: none;
+        font-size: 0.9rem;
+        color: var(--color-text-muted);
+    }
+    
+    .list-header {
+        display: none;
+    }
+}
