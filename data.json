@@ -61,5 +61,12 @@
     "description": "지금 있는 스케쥴들 다 삭제해줘",
     "isKey": false,
     "id": 9
+  },
+  {
+    "title": "모두 삭제해줘",
+    "date": "2026-05-02T09:00:00",
+    "description": "모두 삭제해줘",
+    "isKey": false,
+    "id": 10
   }
 ]
