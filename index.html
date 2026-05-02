@@ -11,7 +11,10 @@
 <body>
     <main class="app-container">
         <header class="app-header">
-            <h1>WORKcalender</h1>
+            <div class="header-top">
+                <h1>WORKcalender</h1>
+                <button id="settings-btn" class="icon-btn" title="Settings">⚙️</button>
+            </div>
             <p class="subtitle">이번 달의 주요 일정을 확인하세요.</p>
         </header>
 
@@ -37,7 +40,54 @@
                 <!-- 전체 일정 리스트가 JavaScript를 통해 렌더링됩니다 -->
             </ul>
         </section>
+        
+        <!-- 하단 여백 확보 -->
+        <div style="height: 100px;"></div>
     </main>
+
+    <!-- 하단 AI 입력창 -->
+    <div class="ai-input-wrapper">
+        <form id="ai-form" class="ai-input-container">
+            <input type="text" id="ai-input" placeholder="예: 모레 오후 3시에 디자인 팀 회의 잡아줘" autocomplete="off" />
+            <button type="submit" id="ai-submit" class="ai-submit-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z" fill="var(--color-bg)"/>
+                </svg>
+            </button>
+        </form>
+    </div>
+
+    <!-- 설정 모달 -->
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button id="close-settings" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">LLM AI 연동 및 GitHub 동기화를 위해 키를 입력해주세요. 입력하신 정보는 브라우저 내부(LocalStorage)에만 안전하게 저장됩니다.</p>
+                <div class="form-group">
+                    <label for="openai-key">OpenAI API Key</label>
+                    <input type="password" id="openai-key" placeholder="sk-..." />
+                </div>
+                <div class="form-group">
+                    <label for="github-pat">GitHub PAT (Fine-grained 또는 Classic)</label>
+                    <input type="password" id="github-pat" placeholder="github_pat_..." />
+                </div>
+                <div class="form-group">
+                    <label for="github-repo">GitHub Repository</label>
+                    <input type="text" id="github-repo" placeholder="예: Markidier/WORKcalender" value="Markidier/WORKcalender" />
+                </div>
+                <button id="save-settings" class="btn-primary">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로딩 오버레이 -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <p id="loading-text">AI가 일정을 분석하고 GitHub에 저장 중입니다...</p>
+    </div>
 
     <!-- 템플릿: 주요 일정 카드 -->
     <template id="key-event-template">
