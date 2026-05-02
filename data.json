@@ -13,13 +13,6 @@
     "description": "UI/UX 디자인 시안 검토 및 피드백",
     "isKey": false
   },
-  {
-    "id": 3,
-    "title": "중간 점검 발표",
-    "date": "2026-05-15T15:30:00",
-    "description": "경영진 대상 프로젝트 진행 상황 보고",
-    "isKey": true
-  },
   [
     {
       "title": "제작_광고주 트리트미팅",
