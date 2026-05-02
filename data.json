@@ -27,13 +27,6 @@
     "description": "메인 페이지 구현 및 API 연동 시작",
     "isKey": false
   },
-  {
-    "id": 5,
-    "title": "베타 테스트 오픈",
-    "date": "2026-05-25T11:00:00",
-    "description": "사내 임직원 대상 베타 버전 릴리즈",
-    "isKey": true
-  },
   [
     {
       "title": "제작_광고주 트리트미팅",
