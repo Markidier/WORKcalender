@@ -82,5 +82,12 @@
     "description": "함은정_BDC 합영 구성안 최종본 전달",
     "isKey": true,
     "id": 12
+  },
+  {
+    "title": "라이필 브랜드위크 캠페인 시작",
+    "date": "2026-04-27T09:00:00",
+    "description": "라이필 브랜드위크 캠페인 시작",
+    "isKey": true,
+    "id": 13
   }
 ]
