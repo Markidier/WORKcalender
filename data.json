@@ -34,13 +34,6 @@
     "description": "사내 임직원 대상 베타 버전 릴리즈",
     "isKey": true
   },
-  {
-    "id": 6,
-    "title": "월말 회고",
-    "date": "2026-05-29T16:00:00",
-    "description": "5월 업무 성과 및 개선점 논의",
-    "isKey": false
-  },
   [
     {
       "title": "제작_광고주 트리트미팅",
