@@ -75,5 +75,12 @@
     "description": "브랜드위크 DA 검수 완료 및 TG 전달",
     "isKey": false,
     "id": 11
+  },
+  {
+    "title": "라이필",
+    "date": "2026-04-27T09:00:00",
+    "description": "함은정_BDC 합영 구성안 최종본 전달",
+    "isKey": true,
+    "id": 12
   }
 ]
