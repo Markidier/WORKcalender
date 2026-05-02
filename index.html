@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WORKcalender - 미니멀 일정 관리</title>
-    <!-- Pretendard 폰트 불러오기 -->
+    <title>WORKcalender - 스마트 일정 관리</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <link rel="stylesheet" href="./style.css">
 </head>
@@ -24,7 +23,7 @@
                 <span class="badge">This Month</span>
             </div>
             <div id="key-events-container" class="key-events-grid">
-                <!-- 주요 일정 카드가 JavaScript를 통해 렌더링됩니다 -->
+                <!-- 렌더링 영역 -->
             </div>
         </section>
 
@@ -35,20 +34,20 @@
             <div class="list-header">
                 <span class="col-date">Date</span>
                 <span class="col-title">Event</span>
+                <span class="col-actions"></span>
             </div>
             <ul id="all-events-list" class="all-events-list">
-                <!-- 전체 일정 리스트가 JavaScript를 통해 렌더링됩니다 -->
+                <!-- 렌더링 영역 -->
             </ul>
         </section>
         
-        <!-- 하단 여백 확보 -->
         <div style="height: 100px;"></div>
     </main>
 
     <!-- 하단 AI 입력창 -->
     <div class="ai-input-wrapper">
         <form id="ai-form" class="ai-input-container">
-            <input type="text" id="ai-input" placeholder="예: 모레 오후 3시에 디자인 팀 회의 잡아줘" autocomplete="off" />
+            <input type="text" id="ai-input" placeholder="예: 다음 주 수요일 오전 10시에 디자인 회의 잡아줘" autocomplete="off" />
             <button type="submit" id="ai-submit" class="ai-submit-btn">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z" fill="var(--color-bg)"/>
@@ -65,8 +64,11 @@
                 <button id="close-settings" class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <p class="modal-desc">LLM AI 연동 및 GitHub 동기화를 위해 키를 입력해주세요. 입력하신 정보는 브라우저 내부(LocalStorage)에만 안전하게 저장됩니다.</p>
-                <!-- OpenAI API Key 입력란 제거 (자체 자연어 엔진 사용) -->
+                <p class="modal-desc">Gemini AI 연동 및 GitHub 동기화를 위해 키를 입력해주세요.</p>
+                <div class="form-group">
+                    <label for="gemini-key">Gemini API Key</label>
+                    <input type="password" id="gemini-key" placeholder="AI Studio에서 발급받은 키 입력" />
+                </div>
                 <div class="form-group">
                     <label for="github-pat">GitHub PAT (Fine-grained 또는 Classic)</label>
                     <input type="password" id="github-pat" placeholder="github_pat_..." />
@@ -80,16 +82,52 @@
         </div>
     </div>
 
+    <!-- 수정 모달 -->
+    <div id="edit-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>일정 수정</h2>
+                <button id="close-edit" class="close-btn">&times;</button>
+            </div>
+            <form id="edit-form" class="modal-body">
+                <input type="hidden" id="edit-id" />
+                <div class="form-group">
+                    <label for="edit-title">제목</label>
+                    <input type="text" id="edit-title" required />
+                </div>
+                <div class="form-group">
+                    <label for="edit-date">날짜 및 시간</label>
+                    <input type="datetime-local" id="edit-date" required />
+                </div>
+                <div class="form-group">
+                    <label for="edit-desc">설명</label>
+                    <input type="text" id="edit-desc" />
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; flex-direction: row;">
+                    <input type="checkbox" id="edit-iskey" style="width: auto;" />
+                    <label for="edit-iskey" style="margin-bottom: 0;">중요 일정 (Key Event)으로 표시</label>
+                </div>
+                <button type="submit" class="btn-primary">수정 완료</button>
+            </form>
+        </div>
+    </div>
+
     <!-- 로딩 오버레이 -->
     <div id="loading-overlay" class="loading-overlay hidden">
         <div class="spinner"></div>
-        <p id="loading-text">AI가 일정을 분석하고 GitHub에 저장 중입니다...</p>
+        <p id="loading-text">동기화 중입니다...</p>
     </div>
 
     <!-- 템플릿: 주요 일정 카드 -->
     <template id="key-event-template">
         <article class="key-event-card">
-            <div class="card-date"></div>
+            <div class="card-header-actions">
+                <div class="card-date"></div>
+                <div class="action-buttons">
+                    <button class="action-btn edit-btn" title="수정">✏️</button>
+                    <button class="action-btn delete-btn" title="삭제">🗑️</button>
+                </div>
+            </div>
             <h3 class="card-title"></h3>
             <p class="card-desc"></p>
         </article>
@@ -102,6 +140,10 @@
             <div class="item-content">
                 <h3 class="item-title"></h3>
                 <p class="item-desc"></p>
+            </div>
+            <div class="list-actions">
+                <button class="action-btn edit-btn" title="수정">✏️</button>
+                <button class="action-btn delete-btn" title="삭제">🗑️</button>
             </div>
         </li>
     </template>
