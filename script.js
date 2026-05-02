@@ -6,6 +6,11 @@ const settingsBtn = document.getElementById('settings-btn');
 const settingsModal = document.getElementById('settings-modal');
 const closeSettingsBtn = document.getElementById('close-settings');
 const saveSettingsBtn = document.getElementById('save-settings');
+
+const editModal = document.getElementById('edit-modal');
+const closeEditBtn = document.getElementById('close-edit');
+const editForm = document.getElementById('edit-form');
+
 const aiForm = document.getElementById('ai-form');
 const aiInput = document.getElementById('ai-input');
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -17,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupEventListeners() {
+    // 설정 모달
     settingsBtn.addEventListener('click', () => {
         settingsModal.classList.remove('hidden');
     });
@@ -26,23 +32,34 @@ function setupEventListeners() {
     });
 
     saveSettingsBtn.addEventListener('click', () => {
+        localStorage.setItem('geminiKey', document.getElementById('gemini-key').value.trim());
         localStorage.setItem('githubPat', document.getElementById('github-pat').value.trim());
         localStorage.setItem('githubRepo', document.getElementById('github-repo').value.trim());
         settingsModal.classList.add('hidden');
         alert('설정이 저장되었습니다!');
-        fetchData(); // 새 설정으로 다시 데이터를 불러옵니다.
+        fetchData();
     });
 
+    // 수정 모달
+    closeEditBtn.addEventListener('click', () => {
+        editModal.classList.add('hidden');
+    });
+
+    editForm.addEventListener('submit', handleEditSubmit);
+
+    // AI 폼
     aiForm.addEventListener('submit', handleAISubmit);
 }
 
 function loadSettings() {
+    const geminiKey = localStorage.getItem('geminiKey') || '';
     const githubPat = localStorage.getItem('githubPat') || '';
     const githubRepo = localStorage.getItem('githubRepo') || 'Markidier/WORKcalender';
 
-    // UI 요소가 존재하는 경우에만 값 설정 (index.html에서 openai-key 필드가 삭제되었을 수 있으므로)
+    const keyInput = document.getElementById('gemini-key');
     const patInput = document.getElementById('github-pat');
     const repoInput = document.getElementById('github-repo');
+    if(keyInput) keyInput.value = geminiKey;
     if(patInput) patInput.value = githubPat;
     if(repoInput) repoInput.value = githubRepo;
 }
@@ -67,7 +84,6 @@ async function fetchData() {
                 const jsonStr = decodeURIComponent(escape(atob(result.content)));
                 data = JSON.parse(jsonStr);
             } else {
-                console.warn('GitHub API로 데이터를 불러오지 못해 로컬 파일로 시도합니다.');
                 data = await fetchLocalData();
             }
         } else {
@@ -101,6 +117,28 @@ function formatDate(dateString) {
     return `${month}.${day}`;
 }
 
+// 수정 및 삭제 이벤트 바인딩
+function attachActionEvents(element, id) {
+    const editBtn = element.querySelector('.edit-btn');
+    const deleteBtn = element.querySelector('.delete-btn');
+
+    if (editBtn) {
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openEditModal(id);
+        });
+    }
+
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (confirm('이 일정을 정말 삭제하시겠습니까?')) {
+                await deleteEvent(id);
+            }
+        });
+    }
+}
+
 function renderKeyEvents(events) {
     const container = document.getElementById('key-events-container');
     const template = document.getElementById('key-event-template');
@@ -118,6 +156,8 @@ function renderKeyEvents(events) {
         clone.querySelector('.card-date').textContent = formatDate(event.date);
         clone.querySelector('.card-title').textContent = event.title;
         clone.querySelector('.card-desc').textContent = event.description;
+        
+        attachActionEvents(clone, event.id);
         container.appendChild(clone);
     });
 }
@@ -140,111 +180,191 @@ function renderAllEvents(events) {
         clone.querySelector('.item-date').textContent = formatDate(event.date) + timeStr;
         clone.querySelector('.item-title').textContent = event.title;
         clone.querySelector('.item-desc').textContent = event.description;
+        
+        attachActionEvents(clone, event.id);
         container.appendChild(clone);
     });
 }
 
-// AI 처리 로직 (자체 자연어 엔진 사용)
+// 수동 조작: 삭제
+async function deleteEvent(id) {
+    const githubPat = localStorage.getItem('githubPat');
+    const githubRepo = localStorage.getItem('githubRepo');
+
+    if (!githubPat) {
+        alert('일정을 삭제하려면 GitHub 연동 설정이 필요합니다.');
+        return;
+    }
+
+    loadingOverlay.classList.remove('hidden');
+    document.getElementById('loading-text').textContent = '일정을 삭제하는 중...';
+
+    try {
+        eventsData = eventsData.filter(e => e.id !== id);
+        await saveToGitHub(githubPat, githubRepo, eventsData);
+        renderData();
+    } catch (error) {
+        console.error('삭제 오류:', error);
+        alert('삭제 중 오류가 발생했습니다: ' + error.message);
+    } finally {
+        loadingOverlay.classList.add('hidden');
+        document.getElementById('loading-text').textContent = '동기화 중입니다...';
+    }
+}
+
+// 수동 조작: 수정 모달 열기
+function openEditModal(id) {
+    const event = eventsData.find(e => e.id === id);
+    if (!event) return;
+
+    document.getElementById('edit-id').value = event.id;
+    document.getElementById('edit-title').value = event.title;
+    
+    // datetime-local 포맷 맞추기 (YYYY-MM-DDTHH:mm)
+    const dateStr = event.date.substring(0, 16); 
+    document.getElementById('edit-date').value = dateStr;
+    
+    document.getElementById('edit-desc').value = event.description;
+    document.getElementById('edit-iskey').checked = event.isKey;
+
+    editModal.classList.remove('hidden');
+}
+
+// 수동 조작: 수정 완료 처리
+async function handleEditSubmit(e) {
+    e.preventDefault();
+    const githubPat = localStorage.getItem('githubPat');
+    const githubRepo = localStorage.getItem('githubRepo');
+
+    if (!githubPat) {
+        alert('일정을 수정하려면 GitHub 연동 설정이 필요합니다.');
+        return;
+    }
+
+    const id = parseInt(document.getElementById('edit-id').value);
+    const title = document.getElementById('edit-title').value;
+    const dateStr = document.getElementById('edit-date').value;
+    const desc = document.getElementById('edit-desc').value;
+    const isKey = document.getElementById('edit-iskey').checked;
+
+    loadingOverlay.classList.remove('hidden');
+    document.getElementById('loading-text').textContent = '수정 내역을 저장하는 중...';
+
+    try {
+        const eventIndex = eventsData.findIndex(e => e.id === id);
+        if (eventIndex !== -1) {
+            eventsData[eventIndex] = {
+                id,
+                title,
+                date: dateStr + ':00', // 초 추가
+                description: desc,
+                isKey
+            };
+            
+            await saveToGitHub(githubPat, githubRepo, eventsData);
+            editModal.classList.add('hidden');
+            renderData();
+        }
+    } catch (error) {
+        console.error('수정 오류:', error);
+        alert('수정 중 오류가 발생했습니다: ' + error.message);
+    } finally {
+        loadingOverlay.classList.add('hidden');
+        document.getElementById('loading-text').textContent = '동기화 중입니다...';
+    }
+}
+
+// AI 처리 로직 (Gemini API 사용)
 async function handleAISubmit(e) {
     e.preventDefault();
     const prompt = aiInput.value.trim();
     if (!prompt) return;
 
+    const geminiKey = localStorage.getItem('geminiKey');
     const githubPat = localStorage.getItem('githubPat');
     const githubRepo = localStorage.getItem('githubRepo');
 
-    if (!githubPat) {
-        alert('GitHub 동기화를 위해 우측 상단의 ⚙️ 설정 아이콘을 눌러 GitHub PAT를 입력해주세요.');
+    if (!geminiKey || !githubPat) {
+        alert('AI 기능 사용을 위해 ⚙️ 설정에서 Gemini API Key와 GitHub PAT를 모두 입력해주세요.');
         settingsModal.classList.remove('hidden');
         return;
     }
 
     aiInput.value = '';
     loadingOverlay.classList.remove('hidden');
+    document.getElementById('loading-text').textContent = 'AI가 일정을 분석하고 GitHub에 저장 중입니다...';
 
     try {
-        // 1. 유료 API 없이 로컬 정규식 엔진으로 자연어 파싱
-        const newEvent = parseEventLocal(prompt);
-        
-        // ID 부여
-        newEvent.id = eventsData.length > 0 ? Math.max(...eventsData.map(e => e.id)) + 1 : 1;
-        eventsData.push(newEvent);
+        // "모두 삭제", "다 삭제" 등의 수동 커맨드는 AI 호출 전 처리
+        if (prompt.includes('모두 삭제') || prompt.includes('다 삭제') || prompt.includes('전부 삭제') || prompt.includes('초기화')) {
+            eventsData = [];
+        } else {
+            const newEvent = await parseEventWithGemini(prompt, geminiKey);
+            newEvent.id = eventsData.length > 0 ? Math.max(...eventsData.map(e => e.id)) + 1 : 1;
+            eventsData.push(newEvent);
+        }
 
-        // 2. GitHub에 업데이트 (data.json 덮어쓰기)
         await saveToGitHub(githubPat, githubRepo, eventsData);
-        
-        // 3. UI 즉시 업데이트
         renderData();
         
     } catch (error) {
-        console.error('처리 중 오류 발생:', error);
+        console.error('AI 처리 중 오류 발생:', error);
         alert('처리 중 오류가 발생했습니다: ' + error.message);
     } finally {
         loadingOverlay.classList.add('hidden');
     }
 }
 
-// 자체 자연어 분석 엔진 (LLM 대체)
-function parseEventLocal(input) {
+// Gemini API 연동
+async function parseEventWithGemini(userInput, apiKey) {
     const today = new Date();
-    let targetDate = new Date(today);
+    const systemPrompt = `You are a smart scheduling assistant. 
+The current date and time is: ${today.toISOString()} (Korea Standard Time is UTC+9).
+Analyze the user's natural language command and return a raw JSON object with the event details.
+DO NOT include markdown formatting like \`\`\`json. ONLY RETURN RAW JSON.
+
+Required JSON format:
+{
+  "title": "Short, clear event title",
+  "date": "YYYY-MM-DDTHH:mm:00",
+  "description": "Brief description. Keep it short.",
+  "isKey": boolean (true ONLY if the event sounds important like 'presentation', 'kickoff', 'release', 'key meeting', 'deadline'. Otherwise false.)
+}
+
+If the user mentions 'tomorrow', calculate the correct date based on the current date provided. If time is not specified, default to 09:00:00.
+
+User input: ${userInput}`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
-    // 1. 날짜 추출
-    if (input.includes('내일')) {
-        targetDate.setDate(targetDate.getDate() + 1);
-    } else if (input.includes('모레')) {
-        targetDate.setDate(targetDate.getDate() + 2);
-    } else {
-        const dateMatch = input.match(/(\d+)월\s*(\d+)일/);
-        if (dateMatch) {
-            targetDate.setMonth(parseInt(dateMatch[1]) - 1);
-            targetDate.setDate(parseInt(dateMatch[2]));
-        }
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            contents: [{
+                parts: [{ text: systemPrompt }]
+            }]
+        })
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error ? errorData.error.message : 'Gemini API 호출 실패');
     }
 
-    // 2. 시간 추출
-    let hours = 9; // 기본 9시
-    let minutes = 0;
+    const data = await response.json();
+    let content = data.candidates[0].content.parts[0].text.trim();
     
-    const timeMatch = input.match(/(오전|오후)?\s*(\d+)시(?:\s*(\d+)분)?/);
-    if (timeMatch) {
-        let isPM = timeMatch[1] === '오후';
-        let h = parseInt(timeMatch[2]);
-        let m = timeMatch[3] ? parseInt(timeMatch[3]) : 0;
-        
-        if (isPM && h < 12) h += 12;
-        if (timeMatch[1] === '오전' && h === 12) h = 0;
-        
-        hours = h;
-        minutes = m;
+    try {
+        // 혹시 마크다운 블록이 섞여있을 경우 처리
+        content = content.replace(/```json/gi, '').replace(/```/g, '').trim();
+        return JSON.parse(content);
+    } catch (e) {
+        console.error("Gemini JSON Parse Error:", content);
+        throw new Error("AI가 유효한 형식으로 응답하지 않았습니다.");
     }
-    
-    targetDate.setHours(hours, minutes, 0, 0);
-
-    // 3. 중요 이벤트(isKey) 판단
-    const keyWords = ['회의', '발표', '미팅', '프로젝트', '킥오프', '마감', '중요'];
-    const isKey = keyWords.some(kw => input.includes(kw));
-
-    // 4. 제목 추출 (시간, 날짜 관련 단어 제거)
-    let title = input
-        .replace(/오늘|내일|모레/g, '')
-        .replace(/(\d+)월\s*(\d+)일/g, '')
-        .replace(/(오전|오후)?\s*(\d+)시(?:\s*(\d+)분)?/g, '')
-        .replace(/잡아줘|추가해줘|등록해|일정|에/g, '')
-        .trim();
-        
-    if (!title) title = "새로운 일정";
-
-    // 날짜 포맷 (YYYY-MM-DDTHH:mm:00)
-    const pad = n => String(n).padStart(2, '0');
-    const dateString = `${targetDate.getFullYear()}-${pad(targetDate.getMonth()+1)}-${pad(targetDate.getDate())}T${pad(targetDate.getHours())}:${pad(targetDate.getMinutes())}:00`;
-
-    return {
-        title: title,
-        date: dateString,
-        description: input, 
-        isKey: isKey
-    };
 }
 
 function utf8ToBase64(str) {
@@ -276,7 +396,7 @@ async function saveToGitHub(pat, repo, newEventsData) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            message: "Update schedule via Smart Assistant",
+            message: "Update schedule (Edit/Delete/AI)",
             content: base64Content,
             sha: sha
         })
