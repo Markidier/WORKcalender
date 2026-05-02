@@ -33,5 +33,12 @@
     "description": "이수지 반영",
     "isKey": false,
     "id": 5
+  },
+  {
+    "title": "라이필 브랜드위크DA_1차 제안 마감",
+    "date": "2026-04-23T09:00:00",
+    "description": "라이필 브랜드위크DA 1차 제안 마감일입니다.",
+    "isKey": true,
+    "id": 6
   }
 ]
