@@ -91,6 +91,29 @@ body {
     font-weight: 400;
 }
 
+/* 액션 버튼 (수정/삭제) */
+.action-buttons, .list-actions {
+    display: flex;
+    gap: 0.5rem;
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    opacity: 0.5;
+    transition: var(--transition);
+    padding: 0.2rem;
+}
+
+.action-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
 /* 섹션 공통 스타일 */
 .section-header {
     display: flex;
@@ -131,16 +154,26 @@ body {
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     transition: var(--transition);
-    cursor: pointer;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
+    position: relative;
 }
 
 .key-event-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
     border-color: var(--color-text);
+}
+
+.key-event-card:hover .action-buttons {
+    opacity: 1;
+}
+
+.card-header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
 }
 
 .card-date {
@@ -182,6 +215,10 @@ body {
     flex: 1;
 }
 
+.col-actions {
+    flex: 0 0 60px;
+}
+
 .all-events-list {
     list-style: none;
     display: flex;
@@ -193,7 +230,7 @@ body {
     padding: var(--spacing-lg) 0;
     border-bottom: 1px solid var(--color-border);
     transition: var(--transition);
-    align-items: flex-start;
+    align-items: center;
 }
 
 .list-item:hover {
@@ -206,16 +243,24 @@ body {
     border-bottom-color: transparent;
 }
 
+.list-item:hover .list-actions {
+    opacity: 1;
+}
+
 .item-date {
     flex: 0 0 120px;
     font-weight: 600;
     font-size: 1rem;
     color: var(--color-text);
-    padding-top: 2px;
 }
 
 .item-content {
     flex: 1;
+}
+
+.list-actions {
+    flex: 0 0 60px;
+    justify-content: flex-end;
 }
 
 .item-title {
@@ -288,7 +333,7 @@ body {
     background: #333333;
 }
 
-/* 설정 모달 */
+/* 모달 공통 */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -449,7 +494,9 @@ body {
     
     .list-item {
         flex-direction: column;
+        align-items: flex-start;
         gap: var(--spacing-sm);
+        position: relative;
     }
     
     .item-date {
@@ -464,5 +511,15 @@ body {
     
     .ai-input-wrapper {
         padding: var(--spacing-sm);
+    }
+
+    .action-buttons, .list-actions {
+        opacity: 1; /* 모바일에서는 항상 보이게 */
+    }
+
+    .list-actions {
+        position: absolute;
+        top: var(--spacing-lg);
+        right: 0;
     }
 }
