@@ -54,5 +54,12 @@
     "description": "라이필 함은정_BDC 구성안 피드백 전달",
     "isKey": false,
     "id": 8
+  },
+  {
+    "title": "라이필 함은정 BDC 구성안 전달",
+    "date": "2026-04-24T09:00:00",
+    "description": "함은정 BDC 구성안 브랜드 전달",
+    "isKey": true,
+    "id": 9
   }
 ]
