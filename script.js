@@ -26,7 +26,6 @@ function setupEventListeners() {
     });
 
     saveSettingsBtn.addEventListener('click', () => {
-        localStorage.setItem('openaiKey', document.getElementById('openai-key').value.trim());
         localStorage.setItem('githubPat', document.getElementById('github-pat').value.trim());
         localStorage.setItem('githubRepo', document.getElementById('github-repo').value.trim());
         settingsModal.classList.add('hidden');
@@ -38,13 +37,14 @@ function setupEventListeners() {
 }
 
 function loadSettings() {
-    const openaiKey = localStorage.getItem('openaiKey') || '';
     const githubPat = localStorage.getItem('githubPat') || '';
     const githubRepo = localStorage.getItem('githubRepo') || 'Markidier/WORKcalender';
 
-    document.getElementById('openai-key').value = openaiKey;
-    document.getElementById('github-pat').value = githubPat;
-    document.getElementById('github-repo').value = githubRepo;
+    // UI 요소가 존재하는 경우에만 값 설정 (index.html에서 openai-key 필드가 삭제되었을 수 있으므로)
+    const patInput = document.getElementById('github-pat');
+    const repoInput = document.getElementById('github-repo');
+    if(patInput) patInput.value = githubPat;
+    if(repoInput) repoInput.value = githubRepo;
 }
 
 async function fetchData() {
@@ -53,7 +53,6 @@ async function fetchData() {
 
     try {
         let data = [];
-        // GitHub PAT가 있으면 GitHub API를 통해 최신 데이터를 가져옵니다 (캐시 및 CORS 우회)
         if (githubPat && githubRepo) {
             const response = await fetch(`https://api.github.com/repos/${githubRepo}/contents/data.json`, {
                 headers: {
@@ -65,7 +64,6 @@ async function fetchData() {
             if (response.ok) {
                 const result = await response.json();
                 currentSha = result.sha;
-                // Base64 디코딩 (UTF-8 지원을 위해 decodeURIComponent 사용)
                 const jsonStr = decodeURIComponent(escape(atob(result.content)));
                 data = JSON.parse(jsonStr);
             } else {
@@ -80,7 +78,7 @@ async function fetchData() {
         renderData();
     } catch (error) {
         console.error('Failed to fetch data:', error);
-        document.getElementById('key-events-container').innerHTML = '<p>데이터를 불러오는데 실패했습니다. (로컬 환경 CORS 또는 설정 확인)</p>';
+        document.getElementById('key-events-container').innerHTML = '<p>데이터를 불러오는데 실패했습니다. (설정에서 GitHub 권한을 확인해주세요)</p>';
     }
 }
 
@@ -91,9 +89,7 @@ async function fetchLocalData() {
 }
 
 function renderData() {
-    // 날짜순 정렬
     const sortedData = [...eventsData].sort((a, b) => new Date(a.date) - new Date(b.date));
-    
     renderKeyEvents(sortedData);
     renderAllEvents(sortedData);
 }
@@ -138,8 +134,6 @@ function renderAllEvents(events) {
     container.innerHTML = '';
     events.forEach(event => {
         const clone = template.content.cloneNode(true);
-        
-        // 날짜와 시간 함께 표시
         const dateObj = new Date(event.date);
         const timeStr = dateObj.getHours() > 0 ? ` ${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}` : '';
         
@@ -150,18 +144,17 @@ function renderAllEvents(events) {
     });
 }
 
-// AI 처리 로직
+// AI 처리 로직 (자체 자연어 엔진 사용)
 async function handleAISubmit(e) {
     e.preventDefault();
     const prompt = aiInput.value.trim();
     if (!prompt) return;
 
-    const openaiKey = localStorage.getItem('openaiKey');
     const githubPat = localStorage.getItem('githubPat');
     const githubRepo = localStorage.getItem('githubRepo');
 
-    if (!openaiKey || !githubPat) {
-        alert('LLM 연동을 위해 우측 상단의 ⚙️ 설정 아이콘을 눌러 OpenAI API 키와 GitHub PAT를 먼저 입력해주세요.');
+    if (!githubPat) {
+        alert('GitHub 동기화를 위해 우측 상단의 ⚙️ 설정 아이콘을 눌러 GitHub PAT를 입력해주세요.');
         settingsModal.classList.remove('hidden');
         return;
     }
@@ -170,8 +163,8 @@ async function handleAISubmit(e) {
     loadingOverlay.classList.remove('hidden');
 
     try {
-        // 1. OpenAI API 호출
-        const newEvent = await parseEventWithLLM(prompt, openaiKey);
+        // 1. 유료 API 없이 로컬 정규식 엔진으로 자연어 파싱
+        const newEvent = parseEventLocal(prompt);
         
         // ID 부여
         newEvent.id = eventsData.length > 0 ? Math.max(...eventsData.map(e => e.id)) + 1 : 1;
@@ -184,64 +177,76 @@ async function handleAISubmit(e) {
         renderData();
         
     } catch (error) {
-        console.error('AI 처리 중 오류 발생:', error);
+        console.error('처리 중 오류 발생:', error);
         alert('처리 중 오류가 발생했습니다: ' + error.message);
     } finally {
         loadingOverlay.classList.add('hidden');
     }
 }
 
-async function parseEventWithLLM(userInput, apiKey) {
+// 자체 자연어 분석 엔진 (LLM 대체)
+function parseEventLocal(input) {
     const today = new Date();
-    const systemPrompt = `You are a smart scheduling assistant. 
-The user will give you a natural language command to add an event.
-The current date and time is: ${today.toISOString()} (Korea Standard Time is UTC+9).
-Analyze the input and return a raw JSON object containing the event details.
-DO NOT wrap the response in markdown code blocks (\`\`\`json). Return ONLY the JSON object.
-
-Required JSON format:
-{
-  "title": "Short, clear event title",
-  "date": "YYYY-MM-DDTHH:mm:00",
-  "description": "Brief description or any additional context mentioned. Keep it short.",
-  "isKey": boolean (Set to true ONLY if the event sounds highly important like 'presentation', 'kickoff', 'release', 'key meeting', 'deadline'. Otherwise false.)
-}
-
-If the user mentions 'tomorrow', 'next week', etc., calculate the correct date based on the current date provided above. Make sure the time is logical if not specified (e.g. default to 09:00:00 or 12:00:00).`;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-            model: "gpt-3.5-turbo",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userInput }
-            ],
-            temperature: 0.2
-        })
-    });
-
-    if (!response.ok) {
-        throw new Error('OpenAI API 호출 실패');
-    }
-
-    const data = await response.json();
-    const content = data.choices[0].message.content.trim();
+    let targetDate = new Date(today);
     
-    try {
-        return JSON.parse(content);
-    } catch (e) {
-        // 혹시 마크다운 블록이 섞여있을 경우 처리
-        const cleanContent = content.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleanContent);
+    // 1. 날짜 추출
+    if (input.includes('내일')) {
+        targetDate.setDate(targetDate.getDate() + 1);
+    } else if (input.includes('모레')) {
+        targetDate.setDate(targetDate.getDate() + 2);
+    } else {
+        const dateMatch = input.match(/(\d+)월\s*(\d+)일/);
+        if (dateMatch) {
+            targetDate.setMonth(parseInt(dateMatch[1]) - 1);
+            targetDate.setDate(parseInt(dateMatch[2]));
+        }
     }
+
+    // 2. 시간 추출
+    let hours = 9; // 기본 9시
+    let minutes = 0;
+    
+    const timeMatch = input.match(/(오전|오후)?\s*(\d+)시(?:\s*(\d+)분)?/);
+    if (timeMatch) {
+        let isPM = timeMatch[1] === '오후';
+        let h = parseInt(timeMatch[2]);
+        let m = timeMatch[3] ? parseInt(timeMatch[3]) : 0;
+        
+        if (isPM && h < 12) h += 12;
+        if (timeMatch[1] === '오전' && h === 12) h = 0;
+        
+        hours = h;
+        minutes = m;
+    }
+    
+    targetDate.setHours(hours, minutes, 0, 0);
+
+    // 3. 중요 이벤트(isKey) 판단
+    const keyWords = ['회의', '발표', '미팅', '프로젝트', '킥오프', '마감', '중요'];
+    const isKey = keyWords.some(kw => input.includes(kw));
+
+    // 4. 제목 추출 (시간, 날짜 관련 단어 제거)
+    let title = input
+        .replace(/오늘|내일|모레/g, '')
+        .replace(/(\d+)월\s*(\d+)일/g, '')
+        .replace(/(오전|오후)?\s*(\d+)시(?:\s*(\d+)분)?/g, '')
+        .replace(/잡아줘|추가해줘|등록해|일정|에/g, '')
+        .trim();
+        
+    if (!title) title = "새로운 일정";
+
+    // 날짜 포맷 (YYYY-MM-DDTHH:mm:00)
+    const pad = n => String(n).padStart(2, '0');
+    const dateString = `${targetDate.getFullYear()}-${pad(targetDate.getMonth()+1)}-${pad(targetDate.getDate())}T${pad(targetDate.getHours())}:${pad(targetDate.getMinutes())}:00`;
+
+    return {
+        title: title,
+        date: dateString,
+        description: input, 
+        isKey: isKey
+    };
 }
 
-// UTF-8 문자열을 Base64로 인코딩하는 헬퍼 함수
 function utf8ToBase64(str) {
     return btoa(unescape(encodeURIComponent(str)));
 }
@@ -251,7 +256,6 @@ async function saveToGitHub(pat, repo, newEventsData) {
     const updatedContent = JSON.stringify(newEventsData, null, 2);
     const base64Content = utf8ToBase64(updatedContent);
 
-    // 최신 SHA를 먼저 가져옵니다 (동기화 충돌 방지)
     const getRes = await fetch(apiUrl, {
         headers: {
             'Authorization': `Bearer ${pat}`,
@@ -272,16 +276,16 @@ async function saveToGitHub(pat, repo, newEventsData) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            message: "Update schedule via LLM Assistant",
+            message: "Update schedule via Smart Assistant",
             content: base64Content,
             sha: sha
         })
     });
 
     if (!putRes.ok) {
-        throw new Error('GitHub 데이터 저장 실패');
+        throw new Error('GitHub 권한이 부족합니다. (저장소 오타 또는 쓰기 권한을 확인해주세요)');
     }
 
     const putResult = await putRes.json();
-    currentSha = putResult.content.sha; // 새 SHA 업데이트
+    currentSha = putResult.content.sha;
 }
