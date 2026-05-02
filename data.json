@@ -6,13 +6,6 @@
     "description": "새로운 WORKcalender 프로젝트 시작을 위한 팀 전체 미팅",
     "isKey": true
   },
-  {
-    "id": 2,
-    "title": "주간 디자인 리뷰",
-    "date": "2026-05-07T14:00:00",
-    "description": "UI/UX 디자인 시안 검토 및 피드백",
-    "isKey": false
-  },
   [
     {
       "title": "제작_광고주 트리트미팅",
